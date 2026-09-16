@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ukeplanen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --board: #FBF6E9;
+    --board-line: #E4D9BE;
+    --ink: #2E2B24;
+    --ink-soft: #746C5C;
+    --card: #FFFFFF;
+    --card-line: #EAE1CC;
+    --shadow: rgba(46,43,36,0.10);
+    --pink: #E8607A;
+    --pink-soft: #FCE6EA;
+    --blue: #3E8FCC;
+    --blue-soft: #E4F1FB;
+    --yellow: #E0A526;
+    --yellow-soft: #FCF0D6;
+    --violet: #7B62D9;
+    --violet-soft: #EDE8FB;
+    --green-done: #4F9E6E;
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --board: #211F1B;
+      --board-line: #3A362D;
+      --ink: #F1ECE0;
+      --ink-soft: #B8AF9C;
+      --card: #2B2822;
+      --card-line: #423D33;
+      --shadow: rgba(0,0,0,0.35);
+      --pink-soft: #402530;
+      --blue-soft: #1F3040;
+      --yellow-soft: #3A2E14;
+      --violet-soft: #2C2640;
+    }
+  }
+  :root[data-theme="dark"]{
+    --board: #211F1B;
+    --board-line: #3A362D;
+    --ink: #F1ECE0;
+    --ink-soft: #B8AF9C;
+    --card: #2B2822;
+    --card-line: #423D33;
+    --shadow: rgba(0,0,0,0.35);
+    --pink-soft: #402530;
+    --blue-soft: #1F3040;
+    --yellow-soft: #3A2E14;
+    --violet-soft: #2C2640;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--board);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .wrap{
+    max-width:1400px;
+    margin:0 auto;
+    padding:22px 26px 60px;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:20px;
+    padding-bottom:14px;
+    border-bottom:2px solid var(--board-line);
+    margin-bottom:18px;
+    flex-wrap:wrap;
+  }
+  .weekday{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:clamp(34px,4vw,52px);
+    line-height:1;
+    letter-spacing:-0.01em;
+  }
+  .datestr{
+    color:var(--ink-soft);
+    font-size:15px;
+    margin-top:6px;
+  }
+  .clock{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:700;
+    font-size:clamp(26px,3vw,38px);
+    color:var(--ink-soft);
+  }
+  .gear-btn{
+    border:2px solid var(--board-line);
+    background:var(--card);
+    color:var(--ink-soft);
+    width:44px;height:44px;
+    border-radius:12px;
+    font-size:20px;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    margin-left:10px;
+  }
+  .gear-btn:active{transform:scale(0.94);}
+  .headright{display:flex; align-items:center; gap:4px;}
+
+  /* ---------- Weekly reminder banner ---------- */
+  .weekly-banner{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:22px;
+  }
+  .reminder-chip{
+    background:var(--violet-soft);
+    border:2px dashed var(--violet);
+    color:var(--ink);
+    border-radius:14px;
+    padding:12px 18px;
+    font-family:'Baloo 2',sans-serif;
+    font-weight:600;
+    font-size:17px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .reminder-chip .pin{font-size:18px;}
+
+  /* ---------- Kid columns ---------- */
+  .board{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:18px;
+  }
+  @media (max-width:900px){
+    .board{grid-template-columns:1fr;}
+  }
+  .kidcol{
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-radius:20px;
+    box-shadow:0 4px 14px var(--shadow);
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+  .kidhead{
+    padding:18px 20px 14px;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    color:#fff;
+  }
+  .avatar{
+    width:46px;height:46px;
+    border-radius:50%;
+    background:rgba(255,255,255,0.25);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Baloo 2',sans-serif;
+    font-weight:700;
+    font-size:20px;
+    flex-shrink:0;
+  }
+  .kidname{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:700;
+    font-size:22px;
+    flex:1;
+  }
+  .kidprogress{
+    font-size:13px;
+    opacity:0.9;
+    font-weight:600;
+  }
+  .progressbar{
+    height:6px;
+    background:rgba(255,255,255,0.3);
+    border-radius:4px;
+    margin-top:8px;
+    overflow:hidden;
+  }
+  .progressbar > div{
+    height:100%;
+    background:#fff;
+    border-radius:4px;
+    transition:width .25s ease;
+  }
+
+  .section{
+    padding:14px 18px 4px;
+  }
+  .section h3{
+    font-family:'Baloo 2',sans-serif;
+    font-size:14px;
+    text-transform:none;
+    letter-spacing:0.02em;
+    color:var(--ink-soft);
+    margin:10px 0 8px;
+    font-weight:700;
+  }
+  .task{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:10px 6px;
+    border-radius:12px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .task:active{background:var(--board);}
+  .box{
+    width:26px;height:26px;
+    border-radius:8px;
+    border:2.5px solid var(--card-line);
+    flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .15s, border-color .15s;
+  }
+  .task.done .box{
+    background:var(--green-done);
+    border-color:var(--green-done);
+  }
+  .box svg{opacity:0;width:16px;height:16px;transition:opacity .15s;}
+  .task.done .box svg{opacity:1;}
+  .tasktext{
+    font-size:16px;
+    font-weight:500;
+    line-height:1.25;
+  }
+  .task.done .tasktext{
+    color:var(--ink-soft);
+    text-decoration:line-through;
+    text-decoration-color:var(--card-line);
+  }
+  .weeklytask .box{border-color:var(--violet);}
+  .weeklytask.done .box{background:var(--violet); border-color:var(--violet);}
+
+  .kidfoot{
+    margin-top:auto;
+    padding:14px 18px 18px;
+  }
+  .allgood{
+    text-align:center;
+    font-family:'Baloo 2',sans-serif;
+    font-weight:700;
+    color:var(--green-done);
+    font-size:15px;
+    padding:6px 0 2px;
+  }
+
+  /* ---------- Settings modal ---------- */
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(20,18,14,0.55);
+    display:none;
+    align-items:center; justify-content:center;
+    z-index:50;
+    padding:20px;
+  }
+  .overlay.open{display:flex;}
+  .modal{
+    background:var(--card);
+    color:var(--ink);
+    border-radius:18px;
+    max-width:640px;
+    width:100%;
+    max-height:86vh;
+    overflow-y:auto;
+    padding:24px 26px 28px;
+  }
+  .modal h2{
+    font-family:'Baloo 2',sans-serif;
+    margin:0 0 4px;
+    font-size:24px;
+  }
+  .modal .sub{color:var(--ink-soft); font-size:14px; margin-bottom:18px;}
+  .modal h4{
+    font-family:'Baloo 2',sans-serif;
+    font-size:15px;
+    margin:22px 0 8px;
+    border-top:1px solid var(--card-line);
+    padding-top:16px;
+  }
+  .modal h4:first-of-type{border-top:none; padding-top:0; margin-top:8px;}
+  .kidedit{
+    display:flex; gap:10px; align-items:center; margin-bottom:10px;
+  }
+  .kidedit input[type=text]{
+    flex:1;
+    padding:8px 10px;
+    border-radius:8px;
+    border:1.5px solid var(--card-line);
+    background:var(--board);
+    color:var(--ink);
+    font-family:inherit;
+    font-size:14px;
+  }
+  .swatch{
+    width:26px;height:26px;border-radius:50%;
+    border:2px solid transparent;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .swatch.sel{border-color:var(--ink);}
+  .colorrow{display:flex; gap:6px;}
+  .listedit{margin-bottom:14px;}
+  .listedit .row{
+    display:flex; gap:8px; align-items:center; margin-bottom:6px;
+  }
+  .listedit input[type=text]{
+    flex:1;
+    padding:7px 9px;
+    border-radius:8px;
+    border:1.5px solid var(--card-line);
+    background:var(--board);
+    color:var(--ink);
+    font-family:inherit;
+    font-size:14px;
+  }
+  select{
+    padding:7px 9px;
+    border-radius:8px;
+    border:1.5px solid var(--card-line);
+    background:var(--board);
+    color:var(--ink);
+    font-family:inherit;
+    font-size:14px;
+  }
+  .smallbtn{
+    border:none;
+    background:var(--board);
+    border:1.5px solid var(--card-line);
+    color:var(--ink-soft);
+    width:30px;height:30px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:15px;
+    flex-shrink:0;
+  }
+  .addbtn{
+    border:none;
+    background:var(--violet-soft);
+    color:var(--violet);
+    font-weight:700;
+    padding:7px 12px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:13px;
+    margin-top:2px;
+  }
+  .modalbtns{
+    display:flex; justify-content:space-between; margin-top:24px; gap:10px;
+  }
+  .primarybtn{
+    border:none;
+    background:var(--ink);
+    color:var(--board);
+    font-family:'Baloo 2',sans-serif;
+    font-weight:700;
+    padding:12px 22px;
+    border-radius:12px;
+    cursor:pointer;
+    font-size:15px;
+    flex:1;
+  }
+  .resetbtn{
+    border:1.5px solid var(--card-line);
+    background:transparent;
+    color:var(--ink-soft);
+    font-family:'Baloo 2',sans-serif;
+    font-weight:600;
+    padding:12px 16px;
+    border-radius:12px;
+    cursor:pointer;
+    font-size:14px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="weekday" id="weekdayLabel">Mandag</div>
+      <div class="datestr" id="dateLabel">1. januar</div>
+    </div>
+    <div class="headright">
+      <div class="clock" id="clockLabel">--:--</div>
+      <button class="gear-btn" id="openSettings" title="Innstillinger" aria-label="Innstillinger">⚙️</button>
+    </div>
+  </header>
+
+  <div class="weekly-banner" id="weeklyBanner"></div>
+
+  <div class="board" id="board"></div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2>Innstillinger</h2>
+    <div class="sub">Navn, farger og faste oppgaver. Alt lagres på denne iPaden.</div>
+
+    <h4>Barna</h4>
+    <div id="kidEditList"></div>
+
+    <h4>Faste oppgaver</h4>
+    <div class="row" style="margin-bottom:10px; gap:8px; align-items:center;">
+      <span style="font-size:14px; color:var(--ink-soft);">Gjelder for:</span>
+      <select id="taskKidSelect"></select>
+      <select id="taskSectionSelect">
+        <option value="morning">Morgen</option>
+        <option value="afternoon">Ettermiddag</option>
+        <option value="evening">Kveld</option>
+      </select>
+    </div>
+    <div class="listedit" id="taskListEdit"></div>
+    <button class="addbtn" id="addTaskBtn">+ Legg til oppgave</button>
+    <div style="font-size:12px; color:var(--ink-soft); margin-top:8px;">
+      Tips: bruk «Kopier til de andre barna» for å slippe å skrive listen tre ganger.
+    </div>
+    <button class="addbtn" id="copyToAllBtn" style="margin-top:8px;">Kopier denne listen til alle barn</button>
+
+    <h4>Ukentlige påminnelser</h4>
+    <div class="row" style="margin-bottom:10px;">
+      <select id="weekdaySelect">
+        <option value="mon">Mandag</option>
+        <option value="tue">Tirsdag</option>
+        <option value="wed">Onsdag</option>
+        <option value="thu">Torsdag</option>
+        <option value="fri">Fredag</option>
+        <option value="sat">Lørdag</option>
+        <option value="sun">Søndag</option>
+      </select>
+    </div>
+    <div class="listedit" id="weeklyListEdit"></div>
+    <button class="addbtn" id="addWeeklyBtn">+ Legg til påminnelse</button>
+
+    <div class="modalbtns">
+      <button class="resetbtn" id="closeSettings">Lukk</button>
+      <button class="resetbtn" id="factoryReset">Nullstill alt</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var STORAGE_KEY = "ukeplan-data-v1";
+  var WEEKDAY_KEYS = ["sun","mon","tue","wed","thu","fri","sat"];
+  var WEEKDAY_LABELS = {mon:"Mandag",tue:"Tirsdag",wed:"Onsdag",thu:"Torsdag",fri:"Fredag",sat:"Lørdag",sun:"Søndag"};
+  var SECTION_LABELS = {morning:"Morgen, før skolen", afternoon:"Ettermiddag, etter skolen", evening:"Kveld, før leggetid"};
+  var COLORS = [
+    {key:"pink", bg:"var(--pink)"},
+    {key:"blue", bg:"var(--blue)"},
+    {key:"yellow", bg:"var(--yellow)"},
+    {key:"violet", bg:"var(--violet)"}
+  ];
+
+  function uid(){ return Math.random().toString(36).slice(2,9); }
+
+  function defaultKid(name, color){
+    return {
+      id: uid(),
+      name: name,
+      color: color,
+      morning: [
+        {id:uid(), text:"Stå opp"},
+        {id:uid(), text:"Re opp senga"},
+        {id:uid(), text:"Spis frokost"},
+        {id:uid(), text:"Puss tennene"},
+        {id:uid(), text:"Kle på deg"},
+        {id:uid(), text:"Pakk sekken"}
+      ],
+      afternoon: [
+        {id:uid(), text:"Heng fra deg jakke og sko"},
+        {id:uid(), text:"Gjør lekser"},
+        {id:uid(), text:"Rydd rommet ditt"}
+      ],
+      evening: [
+        {id:uid(), text:"Dusj / vask deg"},
+        {id:uid(), text:"Puss tennene"},
+        {id:uid(), text:"Legg klar klær til i morgen"},
+        {id:uid(), text:"Les litt / god natt"}
+      ]
+    };
+  }
+
+  function defaultData(){
+    return {
+      kids: [
+        defaultKid("Barn 1", "pink"),
+        defaultKid("Barn 2", "blue"),
+        defaultKid("Barn 3", "yellow")
+      ],
+      weekly: {
+        mon: [{id:uid(), text:"Gymbag"}],
+        tue: [],
+        wed: [{id:uid(), text:"Badeklær"}],
+        thu: [],
+        fri: [],
+        sat: [],
+        sun: []
+      },
+      checks: {} // { "YYYY-MM-DD": { kidId: { taskId: true }, weekly: { itemId: true } } }
+    };
+  }
+
+  var data = load();
+
+  function load(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return defaultData();
+      var parsed = JSON.parse(raw);
+      if(!parsed.kids || !parsed.weekly || !parsed.checks) return defaultData();
+      return parsed;
+    }catch(e){
+      return defaultData();
+    }
+  }
+
+  function save(){
+    try{
+      cleanOldChecks();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }catch(e){ /* storage unavailable, continue in-memory */ }
+  }
+
+  function cleanOldChecks(){
+    var keep = {};
+    var today = new Date();
+    for(var i=0;i<10;i++){
+      var d = new Date(today); d.setDate(d.getDate()-i);
+      keep[dateKey(d)] = true;
+    }
+    var newChecks = {};
+    Object.keys(data.checks).forEach(function(k){
+      if(keep[k]) newChecks[k] = data.checks[k];
+    });
+    data.checks = newChecks;
+  }
+
+  function dateKey(d){
+    var y = d.getFullYear();
+    var m = String(d.getMonth()+1).padStart(2,"0");
+    var day = String(d.getDate()).padStart(2,"0");
+    return y+"-"+m+"-"+day;
+  }
+
+  function todayKey(){ return dateKey(new Date()); }
+
+  function todayChecks(){
+    var k = todayKey();
+    if(!data.checks[k]) data.checks[k] = { kids:{}, weekly:{} };
+    if(!data.checks[k].kids) data.checks[k].kids = {};
+    if(!data.checks[k].weekly) data.checks[k].weekly = {};
+    return data.checks[k];
+  }
+
+  function isDone(kidId, taskId){
+    var c = todayChecks();
+    return !!(c.kids[kidId] && c.kids[kidId][taskId]);
+  }
+  function setDone(kidId, taskId, val){
+    var c = todayChecks();
+    if(!c.kids[kidId]) c.kids[kidId] = {};
+    c.kids[kidId][taskId] = val;
+    save();
+  }
+  function isWeeklyDone(itemId){
+    var c = todayChecks();
+    return !!c.weekly[itemId];
+  }
+  function setWeeklyDone(itemId, val){
+    var c = todayChecks();
+    c.weekly[itemId] = val;
+    save();
+  }
+
+  var CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+
+  function todayWeekdayKey(){
+    return WEEKDAY_KEYS[new Date().getDay()];
+  }
+
+  function render(){
+    renderHeader();
+    renderWeeklyBanner();
+    renderBoard();
+  }
+
+  function renderHeader(){
+    var now = new Date();
+    var weekdayName = now.toLocaleDateString("nb-NO", {weekday:"long"});
+    weekdayName = weekdayName.charAt(0).toUpperCase() + weekdayName.slice(1);
+    document.getElementById("weekdayLabel").textContent = weekdayName;
+    document.getElementById("dateLabel").textContent = now.toLocaleDateString("nb-NO", {day:"numeric", month:"long"});
+    document.getElementById("clockLabel").textContent = now.toLocaleTimeString("nb-NO", {hour:"2-digit", minute:"2-digit"});
+  }
+
+  function renderWeeklyBanner(){
+    var wk = todayWeekdayKey();
+    var items = data.weekly[wk] || [];
+    var el = document.getElementById("weeklyBanner");
+    el.innerHTML = "";
+    items.forEach(function(item){
+      var chip = document.createElement("div");
+      chip.className = "reminder-chip weeklytask" + (isWeeklyDone(item.id) ? " done" : "");
+      chip.innerHTML =
+        '<div class="box">' + CHECK_SVG + '</div>' +
+        '<span class="pin">📌</span><span>' + escapeHtml(item.text) + '</span>';
+      chip.addEventListener("click", function(){
+        setWeeklyDone(item.id, !isWeeklyDone(item.id));
+        renderWeeklyBanner();
+      });
+      el.appendChild(chip);
+    });
+  }
+
+  function colorVar(key){
+    var c = COLORS.filter(function(c){return c.key===key;})[0];
+    return c ? c.bg : "var(--pink)";
+  }
+  function colorSoftVar(key){ return "var(--"+key+"-soft)"; }
+
+  function renderBoard(){
+    var board = document.getElementById("board");
+    board.innerHTML = "";
+    data.kids.forEach(function(kid){
+      var col = document.createElement("div");
+      col.className = "kidcol";
+
+      var allTasks = kid.morning.concat(kid.afternoon, kid.evening);
+      var doneCount = allTasks.filter(function(t){return isDone(kid.id, t.id);}).length;
+      var pct = allTasks.length ? Math.round(100*doneCount/allTasks.length) : 0;
+
+      var head = document.createElement("div");
+      head.className = "kidhead";
+      head.style.background = colorVar(kid.color);
+      head.innerHTML =
+        '<div class="avatar">' + escapeHtml((kid.name||"?").charAt(0).toUpperCase()) + '</div>' +
+        '<div style="flex:1;">' +
+          '<div class="kidname">' + escapeHtml(kid.name) + '</div>' +
+          '<div class="kidprogress">' + doneCount + ' av ' + allTasks.length + ' gjort</div>' +
+          '<div class="progressbar"><div style="width:' + pct + '%"></div></div>' +
+        '</div>';
+      col.appendChild(head);
+
+      ["morning","afternoon","evening"].forEach(function(section){
+        var sec = document.createElement("div");
+        sec.className = "section";
+        var h = document.createElement("h3");
+        h.textContent = SECTION_LABELS[section];
+        sec.appendChild(h);
+        kid[section].forEach(function(task){
+          var row = document.createElement("div");
+          row.className = "task" + (isDone(kid.id, task.id) ? " done" : "");
+          row.innerHTML = '<div class="box">' + CHECK_SVG + '</div><div class="tasktext">' + escapeHtml(task.text) + '</div>';
+          row.addEventListener("click", function(){
+            setDone(kid.id, task.id, !isDone(kid.id, task.id));
+            renderBoard();
+          });
+          sec.appendChild(row);
+        });
+        col.appendChild(sec);
+      });
+
+      var foot = document.createElement("div");
+      foot.className = "kidfoot";
+      if(doneCount === allTasks.length && allTasks.length > 0){
+        foot.innerHTML = '<div class="allgood">✔ Alt gjort for i dag!</div>';
+      }
+      col.appendChild(foot);
+
+      board.appendChild(col);
+    });
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  // ---------- Settings modal ----------
+  var overlay = document.getElementById("overlay");
+  document.getElementById("openSettings").addEventListener("click", function(){
+    overlay.classList.add("open");
+    renderSettings();
+  });
+  document.getElementById("closeSettings").addEventListener("click", function(){
+    overlay.classList.remove("open");
+    render();
+  });
+  overlay.addEventListener("click", function(e){
+    if(e.target === overlay){ overlay.classList.remove("open"); render(); }
+  });
+
+  document.getElementById("factoryReset").addEventListener("click", function(){
+    if(confirm("Slette alle navn, oppgaver og påminnelser, og starte på nytt med standardlisten?")){
+      data = defaultData();
+      save();
+      renderSettings();
+      render();
+    }
+  });
+
+  function renderSettings(){
+    renderKidEdit();
+    renderTaskKidSelect();
+    renderTaskListEdit();
+    renderWeeklyListEdit();
+  }
+
+  function renderKidEdit(){
+    var el = document.getElementById("kidEditList");
+    el.innerHTML = "";
+    data.kids.forEach(function(kid){
+      var row = document.createElement("div");
+      row.className = "kidedit";
+      var input = document.createElement("input");
+      input.type = "text";
+      input.value = kid.name;
+      input.addEventListener("input", function(){
+        kid.name = input.value;
+        save();
+        renderTaskKidSelect();
+      });
+      row.appendChild(input);
+
+      var colorrow = document.createElement("div");
+      colorrow.className = "colorrow";
+      COLORS.forEach(function(c){
+        var sw = document.createElement("div");
+        sw.className = "swatch" + (kid.color===c.key ? " sel" : "");
+        sw.style.background = colorVar(c.key);
+        sw.addEventListener("click", function(){
+          kid.color = c.key;
+          save();
+          renderKidEdit();
+        });
+        colorrow.appendChild(sw);
+      });
+      row.appendChild(colorrow);
+      el.appendChild(row);
+    });
+  }
+
+  function renderTaskKidSelect(){
+    var sel = document.getElementById("taskKidSelect");
+    var current = sel.value;
+    sel.innerHTML = "";
+    data.kids.forEach(function(kid){
+      var opt = document.createElement("option");
+      opt.value = kid.id;
+      opt.textContent = kid.name;
+      sel.appendChild(opt);
+    });
+    if(current && data.kids.some(function(k){return k.id===current;})) sel.value = current;
+    sel.onchange = renderTaskListEdit;
+  }
+
+  document.getElementById("taskSectionSelect").addEventListener("change", renderTaskListEdit);
+
+  function currentKid(){
+    var id = document.getElementById("taskKidSelect").value;
+    return data.kids.filter(function(k){return k.id===id;})[0];
+  }
+
+  function renderTaskListEdit(){
+    var kid = currentKid();
+    var section = document.getElementById("taskSectionSelect").value;
+    var el = document.getElementById("taskListEdit");
+    el.innerHTML = "";
+    if(!kid) return;
+    kid[section].forEach(function(task){
+      var row = document.createElement("div");
+      row.className = "row";
+      var input = document.createElement("input");
+      input.type = "text";
+      input.value = task.text;
+      input.addEventListener("input", function(){ task.text = input.value; save(); });
+      row.appendChild(input);
+      var del = document.createElement("button");
+      del.className = "smallbtn";
+      del.textContent = "✕";
+      del.addEventListener("click", function(){
+        kid[section] = kid[section].filter(function(t){return t.id!==task.id;});
+        save();
+        renderTaskListEdit();
+        render();
+      });
+      row.appendChild(del);
+      el.appendChild(row);
+    });
+  }
+
+  document.getElementById("addTaskBtn").addEventListener("click", function(){
+    var kid = currentKid();
+    var section = document.getElementById("taskSectionSelect").value;
+    if(!kid) return;
+    kid[section].push({id:uid(), text:"Ny oppgave"});
+    save();
+    renderTaskListEdit();
+    render();
+  });
+
+  document.getElementById("copyToAllBtn").addEventListener("click", function(){
+    var kid = currentKid();
+    var section = document.getElementById("taskSectionSelect").value;
+    if(!kid) return;
+    data.kids.forEach(function(other){
+      if(other.id === kid.id) return;
+      other[section] = kid[section].map(function(t){ return {id:uid(), text:t.text}; });
+    });
+    save();
+    render();
+    alert("Listen er kopiert til de andre barna.");
+  });
+
+  function renderWeeklyListEdit(){
+    var wk = document.getElementById("weekdaySelect").value;
+    var el = document.getElementById("weeklyListEdit");
+    el.innerHTML = "";
+    (data.weekly[wk]||[]).forEach(function(item){
+      var row = document.createElement("div");
+      row.className = "row";
+      var input = document.createElement("input");
+      input.type = "text";
+      input.value = item.text;
+      input.addEventListener("input", function(){ item.text = input.value; save(); });
+      row.appendChild(input);
+      var del = document.createElement("button");
+      del.className = "smallbtn";
+      del.textContent = "✕";
+      del.addEventListener("click", function(){
+        data.weekly[wk] = data.weekly[wk].filter(function(t){return t.id!==item.id;});
+        save();
+        renderWeeklyListEdit();
+        render();
+      });
+      row.appendChild(del);
+      el.appendChild(row);
+    });
+  }
+  document.getElementById("weekdaySelect").addEventListener("change", renderWeeklyListEdit);
+  document.getElementById("addWeeklyBtn").addEventListener("click", function(){
+    var wk = document.getElementById("weekdaySelect").value;
+    data.weekly[wk].push({id:uid(), text:"Ny påminnelse"});
+    save();
+    renderWeeklyListEdit();
+    render();
+  });
+
+  // ---------- init ----------
+  render();
+  setInterval(render, 30000); // oppdater klokke/dato + fang opp midnatt-resett
+})();
+</script>
+</body>
+</html>
